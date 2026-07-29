@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MISTIMERS-MU | Boss Tracker 24/7</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: #151f30;
+      --accent: #38bdf8;
+      --text: #f8fafc;
+      --green: #22c55e;
+      --yellow: #eab308;
+      --red: #ef4444;
+      --muted: #64748b;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--accent);
+      margin-bottom: 5px;
+      font-size: 2.2rem;
+      letter-spacing: 1px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: var(--muted);
+      margin-bottom: 25px;
+      font-size: 0.95rem;
+    }
+
+    /* Selector de Servidores */
+    .server-selector {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+
+    .server-btn {
+      background: #1e293b;
+      color: #94a3b8;
+      border: 2px solid #334155;
+      padding: 10px 22px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.9rem;
+    }
+
+    .server-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .server-btn.active {
+      background: var(--accent);
+      color: #0f172a;
+      border-color: var(--accent);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+    }
+
+    /* Grilla de Cuadraditos */
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 20px;
+      max-width: 1250px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 18px;
+      text-align: center;
+      border: 2px solid #2d3748;
+      position: relative;
+      transition: border-color 0.3s ease;
+    }
+
+    .server-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #1e293b;
+      color: #94a3b8;
+      font-size: 0.72rem;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: bold;
+      border: 1px solid #334155;
+    }
+
+    .boss-name {
+      font-size: 1.25rem;
+      font-weight: bold;
+      margin-top: 12px;
+      color: #f1f5f9;
+    }
+
+    .timer {
+      font-size: 2rem;
+      font-weight: bold;
+      margin: 12px 0;
+      font-family: monospace;
+    }
+
+    .last-kill {
+      font-size: 0.82rem;
+      color: #94a3b8;
+    }
+
+    .status-ok { border-color: var(--green); color: var(--green); }
+    .status-warning { border-color: var(--yellow); color: var(--yellow); }
+    .status-alert {
+      border-color: var(--red);
+      color: var(--red);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+      70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>⚔️ MISTIMERS-MU</h1>
+  <div class="subtitle">Panel de Control & Timers en Vivo 24/7</div>
+
+  <!-- Botones de Filtro por Servidor -->
+  <div class="server-selector">
+    <button class="server-btn active" onclick="setServerFilter('ALL')">TODOS</button>
+    <button class="server-btn" onclick="setServerFilter('Server 1')">SERVER 1</button>
+    <button class="server-btn" onclick="setServerFilter('Server 2')">SERVER 2</button>
+    <button class="server-btn" onclick="setServerFilter('Server 3')">SERVER 3</button>
+    <button class="server-btn" onclick="setServerFilter('Server 20')">SERVER 20 (VIP)</button>
+  </div>
+  
+  <div class="grid-container" id="boss-grid"></div>
+
+  <script>
+    // CAMBIA ESTA URL POR LA DE TU BACKEND CUANDO LO SUBAS A RENDER
+    const API_URL = "http://localhost:8000"; 
+
+    const bossConfigStandard = [
+      { id: 'Borgar_1', name: 'Borgar #1', respawnMin: 120 },
+      { id: 'Borgar_2', name: 'Borgar #2', respawnMin: 120 },
+      { id: 'Dreadhorn', name: 'Dreadhorn', respawnMin: 60 },
+      { id: 'Moltragon', name: 'Moltragon', respawnMin: 60 },
+      { id: 'Vescrya', name: 'Vescrya', respawnMin: 420 },
+      { id: 'Muggron', name: 'Muggron', respawnMin: 180 },
+      { id: 'Kharzul', name: 'Kharzul', respawnMin: 60 }
+    ];
+
+    const bossConfigVIP = [
+      { id: 'Vescrya', name: 'Vescrya', respawnMin: 420 },
+      { id: 'Kharzul', name: 'Kharzul', respawnMin: 60 },
+      { id: 'Muggron_CW1', name: 'Muggron (CW) #1', respawnMin: 180 },
+      { id: 'Muggron_CW2', name: 'Muggron (CW) #2', respawnMin: 180 },
+      { id: 'Muggron_BK1', name: 'Muggron (BK) #1', respawnMin: 180 },
+      { id: 'Muggron_BK2', name: 'Muggron (BK) #2', respawnMin: 180 }
+    ];
+
+    const SERVIDORES = ["Server 1", "Server 2", "Server 3", "Server 20"];
+    let currentFilter = 'ALL';
+    let globalState = {};
+
+    function setServerFilter(server) {
+      currentFilter = server;
+      document.querySelectorAll('.server-btn').forEach(btn => {
+        const textBtn = btn.innerText;
+        const target = server === 'ALL' ? 'TODOS' : server.toUpperCase();
+        btn.classList.toggle('active', textBtn.includes(target));
+      });
+      renderCards();
+    }
+
+    async function fetchState() {
+      try {
+        const res = await fetch(`${API_URL}/api/boss/state`);
+        if (res.ok) {
+          globalState = await res.json();
+          renderCards();
+        }
+      } catch (e) {
+        console.error("Error sincronizando estado:", e);
+      }
+    }
+
+    function renderCards() {
+      const grid = document.getElementById('boss-grid');
+      grid.innerHTML = '';
+
+      const serversToShow = currentFilter === 'ALL' ? SERVIDORES : [currentFilter];
+
+      serversToShow.forEach(srv => {
+        const bossesList = (srv === 'Server 20') ? bossConfigVIP : bossConfigStandard;
+
+        bossesList.forEach(boss => {
+          const killTimeString = globalState[srv] ? globalState[srv][boss.id] : null;
+          const lastKill = killTimeString ? new Date(killTimeString) : null;
+          
+          let timerText = "SIN DATOS";
+          let statusClass = "";
+
+          if (lastKill) {
+            const respawnTime = new Date(lastKill.getTime() + boss.respawnMin * 60000);
+            const diffMs = respawnTime - new Date();
+
+            if (diffMs <= 0) {
+              timerText = "¡SPAWNED!";
+              statusClass = "status-alert";
+            } else {
+              const minsLeft = Math.floor(diffMs / 60000);
+              const hrs = Math.floor(minsLeft / 60);
+              const mins = minsLeft % 60;
+              
+              timerText = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
+              statusClass = minsLeft <= 15 ? "status-warning" : "status-ok";
+            }
+          }
+
+          grid.innerHTML += `
+            <div class="card ${statusClass}">
+              <span class="server-badge">${srv}</span>
+              <div class="boss-name">${boss.name}</div>
+              <div class="timer">${timerText}</div>
+              <div class="last-kill">
+                ${lastKill ? 'Muerte: ' + lastKill.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Sin registro'}
+              </div>
+            </div>
+          `;
+        });
+      });
+    }
+
+    setInterval(fetchState, 3000);
+    setInterval(renderCards, 1000);
+    fetchState();
+  </script>
+</body>
+</html>
