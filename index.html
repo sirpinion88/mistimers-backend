@@ -3,281 +3,178 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MISTIMERS-MU | Boss Tracker 24/7</title>
+  <title>Panel de Control & Timers MUDREAM</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    :root {
-      --bg: #0b0f19;
-      --card-bg: #151f30;
-      --accent: #38bdf8;
-      --text: #f8fafc;
-      --green: #22c55e;
-      --yellow: #eab308;
-      --red: #ef4444;
-      --muted: #64748b;
-    }
-
-    * { box-sizing: border-box; }
-
     body {
-      background-color: var(--bg);
-      color: var(--text);
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      margin: 0;
-      padding: 20px;
+      background-color: #0b0f19;
+      color: #e2e8f0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     }
-
-    h1 {
-      text-align: center;
-      color: var(--accent);
-      margin-bottom: 5px;
-      font-size: 2.2rem;
+    .card-normal {
+      background-color: #111827;
+      border: 1px solid #1f293d;
     }
-
-    .subtitle {
-      text-align: center;
-      color: var(--muted);
-      margin-bottom: 25px;
-      font-size: 0.95rem;
+    .card-spawned {
+      background-color: #181119;
+      border: 2px solid #ef4444;
+      box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
     }
-
-    .server-selector {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 30px;
-      flex-wrap: wrap;
+    .badge-ocr {
+      background-color: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
     }
-
-    .server-btn {
-      background: #1e293b;
-      color: #94a3b8;
-      border: 2px solid #334155;
-      padding: 10px 22px;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      font-size: 0.9rem;
-    }
-
-    .server-btn.active {
-      background: var(--accent);
-      color: #0f172a;
-      border-color: var(--accent);
-      box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
-    }
-
-    .grid-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-      gap: 20px;
-      max-width: 1250px;
-      margin: 0 auto;
-    }
-
-    .card {
-      background: var(--card-bg);
-      border-radius: 12px;
-      padding: 18px;
-      text-align: center;
-      border: 2px solid #2d3748;
-      position: relative;
-    }
-
-    .server-badge {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: #1e293b;
-      color: #94a3b8;
-      font-size: 0.72rem;
-      padding: 3px 8px;
-      border-radius: 6px;
-      font-weight: bold;
-      border: 1px solid #334155;
-    }
-
-    .ocr-status-badge {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      font-size: 0.68rem;
-      padding: 3px 8px;
-      border-radius: 6px;
-      font-weight: bold;
-      background: #1e293b;
-      color: var(--muted);
-      border: 1px solid #334155;
-    }
-
-    .ocr-status-badge.online {
-      background: rgba(34, 197, 94, 0.15);
-      color: var(--green);
-      border-color: var(--green);
-    }
-
-    .boss-name {
-      font-size: 1.25rem;
-      font-weight: bold;
-      margin-top: 18px;
-      color: #f1f5f9;
-    }
-
-    .timer {
-      font-size: 2rem;
-      font-weight: bold;
-      margin: 12px 0;
-      font-family: monospace;
-    }
-
-    .last-kill {
-      font-size: 0.82rem;
-      color: #94a3b8;
-    }
-
-    .status-ok { border-color: var(--green); color: var(--green); }
-    .status-warning { border-color: var(--yellow); color: var(--yellow); }
-    .status-alert {
-      border-color: var(--red);
-      color: var(--red);
-      animation: pulse 1.5s infinite;
-    }
-
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-      70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    .badge-ocr-off {
+      background-color: rgba(107, 114, 128, 0.15);
+      color: #9ca3af;
+      border: 1px solid rgba(107, 114, 128, 0.3);
     }
   </style>
 </head>
-<body>
+<body class="p-4 md:p-8">
 
-  <h1>⚔️ MISTIMERS-MU</h1>
-  <div class="subtitle">Panel de Control & Timers en Vivo 24/7</div>
+  <!-- ENCABEZADO Y FILTROS -->
+  <header class="text-center mb-8">
+    <h1 class="text-gray-400 text-sm tracking-wider uppercase mb-4">Panel de Control & Timers en Vivo 24/7</h1>
+    <div class="inline-flex flex-wrap justify-center gap-2 bg-[#131b2e] p-1.5 rounded-lg border border-[#1e293b]">
+      <button onclick="setFilter('TODOS')" id="btn-TODOS" class="px-5 py-2 rounded-md text-sm font-semibold transition-all bg-sky-500 text-white">TODOS</button>
+      <button onclick="setFilter('Server 1')" id="btn-Server 1" class="px-5 py-2 rounded-md text-sm font-semibold text-gray-400 hover:text-white transition-all">SERVER 1</button>
+      <button onclick="setFilter('Server 2')" id="btn-Server 2" class="px-5 py-2 rounded-md text-sm font-semibold text-gray-400 hover:text-white transition-all">SERVER 2</button>
+      <button onclick="setFilter('Server 3')" id="btn-Server 3" class="px-5 py-2 rounded-md text-sm font-semibold text-gray-400 hover:text-white transition-all">SERVER 3</button>
+      <button onclick="setFilter('Server 20')" id="btn-Server 20" class="px-5 py-2 rounded-md text-sm font-semibold text-gray-400 hover:text-white transition-all">SERVER 20 (VIP)</button>
+    </div>
+  </header>
 
-  <div class="server-selector">
-    <button class="server-btn active" onclick="setServerFilter('ALL')">TODOS</button>
-    <button class="server-btn" onclick="setServerFilter('Server 1')">SERVER 1</button>
-    <button class="server-btn" onclick="setServerFilter('Server 2')">SERVER 2</button>
-    <button class="server-btn" onclick="setServerFilter('Server 3')">SERVER 3</button>
-    <button class="server-btn" onclick="setServerFilter('Server 20')">SERVER 20 (VIP)</button>
-  </div>
-  
-  <div class="grid-container" id="boss-grid"></div>
+  <!-- CONTENEDOR DE TARJETAS DE BOSSES -->
+  <main id="cards-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 max-w-7xl mx-auto">
+    <!-- Generado dinámicamente -->
+  </main>
 
   <script>
-    const API_URL = "https://mistimers-backend.onrender.com"; 
+    const socket = io();
+    let globalState = {};
+    let heartbeats = {};
+    let currentFilter = 'TODOS';
 
-    // Lista Estándar (Sin Dreadhorn ni Moltragon)
-    const bossConfigStandard = [
-      { id: 'Borgar_1', name: 'Borgar #1', respawnMin: 120 },
-      { id: 'Borgar_2', name: 'Borgar #2', respawnMin: 120 },
-      { id: 'Vescrya', name: 'Vescrya', respawnMin: 420 },
-      { id: 'Muggron', name: 'Muggron', respawnMin: 180 },
-      { id: 'Kharzul', name: 'Kharzul', respawnMin: 60 }
-    ];
+    const DISPLAY_NAMES = {
+      "Borgar_1": "Borgar #1",
+      "Borgar_2": "Borgar #2",
+      "Vescrya": "Vescrya",
+      "Muggron": "Muggron",
+      "Kharzul": "Kharzul",
+      "Muggron_CW1": "Muggron (CW) #1",
+      "Muggron_CW2": "Muggron (CW) #2",
+      "Muggron_BK1": "Muggron (BK) #1",
+      "Muggron_BK2": "Muggron (BK) #2"
+    };
 
-    // Lista VIP Server 20
-    const bossConfigVIP = [
-      { id: 'Vescrya', name: 'Vescrya', respawnMin: 420 },
-      { id: 'Kharzul', name: 'Kharzul', respawnMin: 60 },
-      { id: 'Muggron_CW1', name: 'Muggron (CW) #1', respawnMin: 180 },
-      { id: 'Muggron_CW2', name: 'Muggron (CW) #2', respawnMin: 180 },
-      { id: 'Muggron_BK1', name: 'Muggron (BK) #1', respawnMin: 180 },
-      { id: 'Muggron_BK2', name: 'Muggron (BK) #2', respawnMin: 180 }
-    ];
+    socket.on('init_state', (data) => {
+      globalState = data.gameState;
+      heartbeats = data.heartbeats;
+      render();
+    });
 
-    const SERVIDORES = ["Server 1", "Server 2", "Server 3", "Server 20"];
-    let currentFilter = 'ALL';
-    let globalTimers = {};
-    let activeScanners = {};
+    socket.on('boss_killed', (bossData) => {
+      if (!globalState[bossData.server]) globalState[bossData.server] = {};
+      globalState[bossData.server][bossData.bossId] = bossData;
+      render();
+    });
 
-    function setServerFilter(server) {
-      currentFilter = server;
-      document.querySelectorAll('.server-btn').forEach(btn => {
-        const textBtn = btn.innerText;
-        const target = server === 'ALL' ? 'TODOS' : server.toUpperCase();
-        btn.classList.toggle('active', textBtn.includes(target));
+    socket.on('heartbeat_update', (data) => {
+      heartbeats[data.server] = data.active;
+      render();
+    });
+
+    function setFilter(filter) {
+      currentFilter = filter;
+      document.querySelectorAll('header button').forEach(btn => {
+        btn.className = "px-5 py-2 rounded-md text-sm font-semibold text-gray-400 hover:text-white transition-all";
       });
-      renderCards();
+      document.getElementById(`btn-${filter}`).className = "px-5 py-2 rounded-md text-sm font-semibold bg-sky-500 text-white transition-all";
+      render();
     }
 
-    async function fetchState() {
-      try {
-        const res = await fetch(`${API_URL}/api/boss/state`);
-        if (res.ok) {
-          const data = await res.json();
-          globalTimers = data.timers || {};
-          activeScanners = data.active_scanners || {};
-          renderCards();
+    function render() {
+      const container = document.getElementById('cards-container');
+      container.innerHTML = '';
+
+      for (const serverName in globalState) {
+        if (currentFilter !== 'TODOS' && currentFilter !== serverName) continue;
+
+        const isOcrActive = !!heartbeats[serverName];
+
+        for (const bossId in globalState[serverName]) {
+          const boss = globalState[serverName][bossId];
+          const cardHtml = createCardElement(serverName, boss, isOcrActive);
+          container.appendChild(cardHtml);
         }
-      } catch (e) {
-        console.error("Sincronizando...", e);
       }
     }
 
-    function isScannerOnline(serverName) {
-      if (!activeScanners[serverName]) return false;
-      const lastPing = new Date(activeScanners[serverName]);
-      const diffSec = (new Date() - lastPing) / 1000;
-      return diffSec < 25;
+    function createCardElement(server, boss, isOcrActive) {
+      const card = document.createElement('div');
+      
+      let statusText = "SIN DATOS";
+      let statusClass = "text-gray-200 text-2xl font-bold";
+      let footerText = "Sin datos";
+      let isSpawned = false;
+
+      if (boss.respawnTime) {
+        const now = new Date();
+        const respawn = new Date(boss.respawnTime);
+        const kill = new Date(boss.lastKillTime);
+
+        // Formatear hora de muerte
+        const hours = kill.getHours();
+        const minutes = kill.getMinutes().toString().padStart(2, '0');
+        const ampm = hours >= 12 ? 'p.m.' : 'a.m.';
+        const formattedHours = (hours % 12 || 12).toString().padStart(2, '0');
+        footerText = `Muerte: ${formattedHours}:${minutes} ${ampm}`;
+
+        const diffMs = respawn - now;
+
+        if (diffMs <= 0) {
+          isSpawned = true;
+          statusText = "¡SPAWNED!";
+          statusClass = "text-red-500 text-2xl font-black tracking-wide animate-pulse";
+        } else {
+          const totalSecs = Math.floor(diffMs / 1000);
+          const hrs = Math.floor(totalSecs / 3600);
+          const mins = Math.floor((totalSecs % 3600) / 60);
+          statusText = `${hrs}h ${mins}m`;
+          statusClass = "text-emerald-400 text-3xl font-bold tracking-wider";
+        }
+      }
+
+      card.className = `p-4 rounded-xl flex flex-col justify-between min-h-[190px] transition-all ${isSpawned ? 'card-spawned' : 'card-normal'}`;
+
+      const ocrBadge = isOcrActive 
+        ? `<span class="badge-ocr text-[10px] px-2 py-0.5 rounded font-semibold uppercase">● OCR ACTIVO</span>`
+        : `<span class="badge-ocr-off text-[10px] px-2 py-0.5 rounded font-semibold uppercase">● OCR OFF</span>`;
+
+      card.innerHTML = `
+        <div>
+          <div class="flex justify-between items-center mb-3">
+            ${ocrBadge}
+            <span class="bg-slate-800 text-slate-300 text-xs px-2.5 py-0.5 rounded border border-slate-700">${server}</span>
+          </div>
+          <h2 class="text-center font-extrabold text-slate-100 text-lg mb-2">${DISPLAY_NAMES[boss.bossId] || boss.bossId}</h2>
+          <div class="text-center my-2">
+            <span class="${statusClass}">${statusText}</span>
+          </div>
+        </div>
+        <div class="text-center mt-3 pt-2 border-t border-slate-800/80">
+          <span class="text-xs text-slate-400">${footerText}</span>
+        </div>
+      `;
+
+      return card;
     }
 
-    function renderCards() {
-      const grid = document.getElementById('boss-grid');
-      grid.innerHTML = '';
-
-      const serversToShow = currentFilter === 'ALL' ? SERVIDORES : [currentFilter];
-
-      serversToShow.forEach(srv => {
-        const bossesList = (srv === 'Server 20') ? bossConfigVIP : bossConfigStandard;
-        const online = isScannerOnline(srv);
-        const badgeHTML = online 
-          ? `<span class="ocr-status-badge online">● OCR ACTIVO</span>`
-          : `<span class="ocr-status-badge">○ OFFLINE</span>`;
-
-        bossesList.forEach(boss => {
-          const killTimeString = globalTimers[srv] ? globalTimers[srv][boss.id] : null;
-          const lastKill = killTimeString ? new Date(killTimeString) : null;
-          
-          let timerText = "SIN DATOS";
-          let statusClass = "";
-
-          if (lastKill) {
-            const respawnTime = new Date(lastKill.getTime() + boss.respawnMin * 60000);
-            const diffMs = respawnTime - new Date();
-
-            if (diffMs <= 0) {
-              timerText = "¡SPAWNED!";
-              statusClass = "status-alert";
-            } else {
-              const minsLeft = Math.floor(diffMs / 60000);
-              const hrs = Math.floor(minsLeft / 60);
-              const mins = minsLeft % 60;
-              
-              timerText = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
-              statusClass = minsLeft <= 15 ? "status-warning" : "status-ok";
-            }
-          }
-
-          grid.innerHTML += `
-            <div class="card ${statusClass}">
-              ${badgeHTML}
-              <span class="server-badge">${srv}</span>
-              <div class="boss-name">${boss.name}</div>
-              <div class="timer">${timerText}</div>
-              <div class="last-kill">
-                ${lastKill ? 'Muerte: ' + lastKill.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Sin datos'}
-              </div>
-            </div>
-          `;
-        });
-      });
-    }
-
-    setInterval(fetchState, 3000);
-    setInterval(renderCards, 1000);
-    fetchState();
+    // Actualizar los contadores cada 1 segundo dinámicamente
+    setInterval(render, 1000);
   </script>
 </body>
 </html>
