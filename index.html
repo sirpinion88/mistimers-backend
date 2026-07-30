@@ -3,149 +3,281 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MISTIMERS-MU | Panel</title>
+  <title>MISTIMERS-MU | Boss Tracker 24/7</title>
   <style>
     :root {
-      --bg: #0b0f19; --card-bg: #151f30; --accent: #38bdf8;
-      --text: #f8fafc; --green: #22c55e; --yellow: #eab308; --red: #ef4444;
+      --bg: #0b0f19;
+      --card-bg: #151f30;
+      --accent: #38bdf8;
+      --text: #f8fafc;
+      --green: #22c55e;
+      --yellow: #eab308;
+      --red: #ef4444;
+      --muted: #64748b;
     }
-    body { background-color: var(--bg); color: var(--text); font-family: system-ui, sans-serif; margin: 0; padding: 20px; }
-    .hidden { display: none !important; }
-    
-    /* Formulario Auth */
-    .auth-box { max-width: 360px; margin: 80px auto; background: var(--card-bg); padding: 30px; border-radius: 12px; border: 1px solid #334155; text-align: center; }
-    .auth-box input { width: 100%; padding: 10px; margin: 8px 0; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; }
-    .auth-box button { width: 100%; padding: 10px; margin-top: 10px; border-radius: 6px; border: none; background: var(--accent); color: #0f172a; font-weight: bold; cursor: pointer; }
-    
-    /* Dashboard Grid */
-    h1 { text-align: center; color: var(--accent); }
-    .server-selector { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-    .server-btn { background: #1e293b; color: #94a3b8; border: 1px solid #334155; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
-    .server-btn.active { background: var(--accent); color: #0f172a; font-weight: bold; }
-    .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; max-width: 1200px; margin: 0 auto; }
-    .card { background: var(--card-bg); padding: 15px; border-radius: 10px; text-align: center; border: 2px solid #334155; position: relative; }
-    .status-ok { border-color: var(--green); } .status-warning { border-color: var(--yellow); } .status-alert { border-color: var(--red); }
+
+    * { box-sizing: border-box; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--accent);
+      margin-bottom: 5px;
+      font-size: 2.2rem;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: var(--muted);
+      margin-bottom: 25px;
+      font-size: 0.95rem;
+    }
+
+    .server-selector {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+
+    .server-btn {
+      background: #1e293b;
+      color: #94a3b8;
+      border: 2px solid #334155;
+      padding: 10px 22px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.9rem;
+    }
+
+    .server-btn.active {
+      background: var(--accent);
+      color: #0f172a;
+      border-color: var(--accent);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+    }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 20px;
+      max-width: 1250px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 18px;
+      text-align: center;
+      border: 2px solid #2d3748;
+      position: relative;
+    }
+
+    .server-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #1e293b;
+      color: #94a3b8;
+      font-size: 0.72rem;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: bold;
+      border: 1px solid #334155;
+    }
+
+    .ocr-status-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 0.68rem;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: bold;
+      background: #1e293b;
+      color: var(--muted);
+      border: 1px solid #334155;
+    }
+
+    .ocr-status-badge.online {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--green);
+      border-color: var(--green);
+    }
+
+    .boss-name {
+      font-size: 1.25rem;
+      font-weight: bold;
+      margin-top: 18px;
+      color: #f1f5f9;
+    }
+
+    .timer {
+      font-size: 2rem;
+      font-weight: bold;
+      margin: 12px 0;
+      font-family: monospace;
+    }
+
+    .last-kill {
+      font-size: 0.82rem;
+      color: #94a3b8;
+    }
+
+    .status-ok { border-color: var(--green); color: var(--green); }
+    .status-warning { border-color: var(--yellow); color: var(--yellow); }
+    .status-alert {
+      border-color: var(--red);
+      color: var(--red);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+      70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
   </style>
 </head>
 <body>
 
-  <!-- PANTALLA DE ACCESO / REGISTRO -->
-  <div id="auth-screen" class="auth-box">
-    <h2>⚔️ MISTIMERS-MU</h2>
-    <input type="text" id="user" placeholder="Usuario">
-    <input type="password" id="pass" placeholder="Contraseña">
-    <button onclick="login()">Iniciar Sesión</button>
-    <button onclick="register()" style="background:#475569; color:white;">Solicitar Registro</button>
-    <p id="msg" style="font-size:0.85rem; color:#f87171; margin-top:12px;"></p>
-  </div>
+  <h1>⚔️ MISTIMERS-MU</h1>
+  <div class="subtitle">Panel de Control & Timers en Vivo 24/7</div>
 
-  <!-- DASHBOARD PRINCIPAL (OCULTO POR DEFECTO) -->
-  <div id="dashboard-screen" class="hidden">
-    <h1>⚔️ MISTIMERS-MU</h1>
-    <div class="server-selector">
-      <button class="server-btn active" onclick="setServerFilter('ALL')">TODOS</button>
-      <button class="server-btn" onclick="setServerFilter('Server 1')">SERVER 1</button>
-      <button class="server-btn" onclick="setServerFilter('Server 2')">SERVER 2</button>
-      <button class="server-btn" onclick="setServerFilter('Server 3')">SERVER 3</button>
-      <button class="server-btn" onclick="setServerFilter('Server 20')">SERVER 20</button>
-    </div>
-    <div class="grid-container" id="boss-grid"></div>
+  <div class="server-selector">
+    <button class="server-btn active" onclick="setServerFilter('ALL')">TODOS</button>
+    <button class="server-btn" onclick="setServerFilter('Server 1')">SERVER 1</button>
+    <button class="server-btn" onclick="setServerFilter('Server 2')">SERVER 2</button>
+    <button class="server-btn" onclick="setServerFilter('Server 3')">SERVER 3</button>
+    <button class="server-btn" onclick="setServerFilter('Server 20')">SERVER 20 (VIP)</button>
   </div>
+  
+  <div class="grid-container" id="boss-grid"></div>
 
   <script>
-    const API_URL = "https://mistimers-api.onrender.com"; // Tu URL real de Render
-    let token = localStorage.getItem('token');
+    const API_URL = "https://mistimers-backend.onrender.com"; 
 
     const bossConfigStandard = [
-      { id: 'Borgar_1', name: 'Borgar #1', respawnMin: 120 }, { id: 'Borgar_2', name: 'Borgar #2', respawnMin: 120 },
-      { id: 'Dreadhorn', name: 'Dreadhorn', respawnMin: 60 }, { id: 'Moltragon', name: 'Moltragon', respawnMin: 60 },
-      { id: 'Vescrya', name: 'Vescrya', respawnMin: 420 }, { id: 'Muggron', name: 'Muggron', respawnMin: 180 }, { id: 'Kharzul', name: 'Kharzul', respawnMin: 60 }
+      { id: 'Borgar_1', name: 'Borgar #1', respawnMin: 120 },
+      { id: 'Borgar_2', name: 'Borgar #2', respawnMin: 120 },
+      { id: 'Dreadhorn', name: 'Dreadhorn', respawnMin: 60 },
+      { id: 'Moltragon', name: 'Moltragon', respawnMin: 60 },
+      { id: 'Vescrya', name: 'Vescrya', respawnMin: 420 },
+      { id: 'Muggron', name: 'Muggron', respawnMin: 180 },
+      { id: 'Kharzul', name: 'Kharzul', respawnMin: 60 }
     ];
+
     const bossConfigVIP = [
-      { id: 'Vescrya', name: 'Vescrya', respawnMin: 420 }, { id: 'Kharzul', name: 'Kharzul', respawnMin: 60 },
-      { id: 'Muggron_CW1', name: 'Muggron (CW) #1', respawnMin: 180 }, { id: 'Muggron_CW2', name: 'Muggron (CW) #2', respawnMin: 180 },
-      { id: 'Muggron_BK1', name: 'Muggron (BK) #1', respawnMin: 180 }, { id: 'Muggron_BK2', name: 'Muggron (BK) #2', respawnMin: 180 }
+      { id: 'Vescrya', name: 'Vescrya', respawnMin: 420 },
+      { id: 'Kharzul', name: 'Kharzul', respawnMin: 60 },
+      { id: 'Muggron_CW1', name: 'Muggron (CW) #1', respawnMin: 180 },
+      { id: 'Muggron_CW2', name: 'Muggron (CW) #2', respawnMin: 180 },
+      { id: 'Muggron_BK1', name: 'Muggron (BK) #1', respawnMin: 180 },
+      { id: 'Muggron_BK2', name: 'Muggron (BK) #2', respawnMin: 180 }
     ];
 
-    let currentFilter = 'ALL', globalState = {};
+    const SERVIDORES = ["Server 1", "Server 2", "Server 3", "Server 20"];
+    let currentFilter = 'ALL';
+    let globalTimers = {};
+    let activeScanners = {};
 
-    async function login() {
-      const u = document.getElementById('user').value, p = document.getElementById('pass').value;
-      const res = await fetch(`${API_URL}/api/login`, {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({username: u, password: p})
+    function setServerFilter(server) {
+      currentFilter = server;
+      document.querySelectorAll('.server-btn').forEach(btn => {
+        const textBtn = btn.innerText;
+        const target = server === 'ALL' ? 'TODOS' : server.toUpperCase();
+        btn.classList.toggle('active', textBtn.includes(target));
       });
-      const data = await res.json();
-      if (res.ok) {
-        token = data.access_token;
-        localStorage.setItem('token', token);
-        showDashboard();
-      } else {
-        document.getElementById('msg').innerText = data.detail;
-      }
-    }
-
-    async function register() {
-      const u = document.getElementById('user').value, p = document.getElementById('pass').value;
-      const res = await fetch(`${API_URL}/api/register`, {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({username: u, password: p})
-      });
-      const data = await res.json();
-      document.getElementById('msg').style.color = res.ok ? "#4ade80" : "#f87171";
-      document.getElementById('msg').innerText = data.detail || data.message;
-    }
-
-    function showDashboard() {
-      document.getElementById('auth-screen').classList.add('hidden');
-      document.getElementById('dashboard-screen').classList.remove('hidden');
-      setInterval(fetchState, 3000);
-      fetchState();
+      renderCards();
     }
 
     async function fetchState() {
-      const res = await fetch(`${API_URL}/api/boss/state`);
-      if (res.ok) { globalState = await res.json(); renderCards(); }
+      try {
+        const res = await fetch(`${API_URL}/api/boss/state`);
+        if (res.ok) {
+          const data = await res.json();
+          globalTimers = data.timers || {};
+          activeScanners = data.active_scanners || {};
+          renderCards();
+        }
+      } catch (e) {
+        console.error("Sincronizando...", e);
+      }
+    }
+
+    function isScannerOnline(serverName) {
+      if (!activeScanners[serverName]) return false;
+      const lastPing = new Date(activeScanners[serverName]);
+      const diffSec = (new Date() - lastPing) / 1000;
+      return diffSec < 25;
     }
 
     function renderCards() {
-      const grid = document.getElementById('boss-grid'); grid.innerHTML = '';
-      const SERVIDORES = ["Server 1", "Server 2", "Server 3", "Server 20"];
-      const srvs = currentFilter === 'ALL' ? SERVIDORES : [currentFilter];
+      const grid = document.getElementById('boss-grid');
+      grid.innerHTML = '';
 
-      srvs.forEach(srv => {
-        const list = srv === 'Server 20' ? bossConfigVIP : bossConfigStandard;
-        list.forEach(boss => {
-          const killStr = globalState[srv] ? globalState[srv][boss.id] : null;
-          const lastKill = killStr ? new Date(killStr) : null;
-          let timerText = "SIN DATOS", statusClass = "";
+      const serversToShow = currentFilter === 'ALL' ? SERVIDORES : [currentFilter];
+
+      serversToShow.forEach(srv => {
+        const bossesList = (srv === 'Server 20') ? bossConfigVIP : bossConfigStandard;
+        const online = isScannerOnline(srv);
+        const badgeHTML = online 
+          ? `<span class="ocr-status-badge online">● OCR ACTIVO</span>`
+          : `<span class="ocr-status-badge">○ OFFLINE</span>`;
+
+        bossesList.forEach(boss => {
+          const killTimeString = globalTimers[srv] ? globalTimers[srv][boss.id] : null;
+          const lastKill = killTimeString ? new Date(killTimeString) : null;
+          
+          let timerText = "SIN DATOS";
+          let statusClass = "";
 
           if (lastKill) {
-            const respawn = new Date(lastKill.getTime() + boss.respawnMin * 60000);
-            const diffMs = respawn - new Date();
-            if (diffMs <= 0) { timerText = "¡SPAWNED!"; statusClass = "status-alert"; }
-            else {
-              const m = Math.floor(diffMs / 60000), h = Math.floor(m / 60);
-              timerText = h > 0 ? `${h}h ${m%60}m` : `${m%60}m`;
-              statusClass = m <= 15 ? "status-warning" : "status-ok";
+            const respawnTime = new Date(lastKill.getTime() + boss.respawnMin * 60000);
+            const diffMs = respawnTime - new Date();
+
+            if (diffMs <= 0) {
+              timerText = "¡SPAWNED!";
+              statusClass = "status-alert";
+            } else {
+              const minsLeft = Math.floor(diffMs / 60000);
+              const hrs = Math.floor(minsLeft / 60);
+              const mins = minsLeft % 60;
+              
+              timerText = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
+              statusClass = minsLeft <= 15 ? "status-warning" : "status-ok";
             }
           }
-          grid.innerHTML += `<div class="card ${statusClass}">
-            <div style="font-size:0.75rem; color:#64748b; font-weight:bold;">${srv}</div>
-            <div style="font-size:1.1rem; font-weight:bold; margin:8px 0;">${boss.name}</div>
-            <div style="font-size:1.8rem; font-weight:bold; font-family:monospace;">${timerText}</div>
-          </div>`;
+
+          grid.innerHTML += `
+            <div class="card ${statusClass}">
+              ${badgeHTML}
+              <span class="server-badge">${srv}</span>
+              <div class="boss-name">${boss.name}</div>
+              <div class="timer">${timerText}</div>
+              <div class="last-kill">
+                ${lastKill ? 'Muerte: ' + lastKill.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Sin datos'}
+              </div>
+            </div>
+          `;
         });
       });
     }
 
-    function setServerFilter(srv) {
-      currentFilter = srv;
-      document.querySelectorAll('.server-btn').forEach(b => b.classList.toggle('active', b.innerText.includes(srv.toUpperCase())));
-      renderCards();
-    }
-
-    if (token) showDashboard();
+    setInterval(fetchState, 3000);
+    setInterval(renderCards, 1000);
+    fetchState();
   </script>
 </body>
 </html>
